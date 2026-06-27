@@ -1,11 +1,12 @@
-# FitPersona Streamlit GitHub 版
+# FitPersona Mobile Streamlit v3
 
-这是一个可以直接上传 GitHub 并部署到 Streamlit Community Cloud 的 Web App 项目。
+手机端优先的健身人格抽象图鉴 Web App。  
+可以直接上传 GitHub，然后用 Streamlit Community Cloud 部署。
 
 ## 项目结构
 
 ```txt
-fitpersona-streamlit-github/
+fitpersona-mobile-streamlit-v3/
 ├── app.py
 ├── requirements.txt
 ├── index.html
@@ -29,35 +30,29 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-打开浏览器中的本地地址即可。
+## Streamlit Cloud 部署
 
-## Streamlit Cloud 部署入口
-
-部署时主文件路径填写：
+Main file path 填：
 
 ```txt
 app.py
 ```
 
-## 主要功能
+## v3 升级点
 
-- 健身人格测试
-- 16 种抽象人格
-- 首页仪表盘
-- 今日任务打卡
-- 历史记录
-- 身体反馈
-- 搭子匹配
+- 手机端优先布局
+- 底部 Tab 导航
+- 大按钮、大卡片、适配 iPhone/Android
+- 20 道题，按真实运动社交词条重构
+- 首页、测试、今日任务、图鉴、搭子匹配、记录
+- localStorage 本地保存
 - 下载分享海报
-- 导出 JSON 数据
+- 导出 JSON
 
-## 修改内容
+## 修改题目和人格
 
-主要修改 `ui/data.js`：
+改 `ui/data.js`。
 
-- `questions`：测试题库
-- `personas`：16 种人格文案
-- `daily`：每日任务
-- `tags`：分享标签
+## 修改视觉
 
-视觉样式主要修改 `ui/styles.css`。
+改 `ui/styles.css`。
