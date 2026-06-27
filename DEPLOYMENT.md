@@ -117,3 +117,14 @@ Secrets 填同样内容。
 ## v4.1.1 页面修复
 
 如果你已经部署过旧版，上传本版覆盖 GitHub 后，在 Streamlit Cloud 点击 Reboot / Rerun 即可刷新。
+
+
+## v4.1.2 底部工具栏修复
+
+如果底部 Tabbar 仍然没有刷新，请在 Streamlit Cloud 里点击：
+
+```txt
+Manage app -> Reboot app
+```
+
+手机端也建议清理浏览器缓存或重新打开链接。

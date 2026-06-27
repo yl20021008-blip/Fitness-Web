@@ -47,10 +47,19 @@ st.markdown(
         border-radius: 22px;
         box-shadow: 0 18px 54px rgba(52, 43, 37, 0.13);
         background: #F7F0E8;
+        height: calc(100dvh - 18px) !important;
+        min-height: 640px;
+        max-height: 100dvh;
     }
     @media (max-width: 640px) {
         .block-container { padding: 0; }
-        iframe { border-radius: 0; box-shadow: none; }
+        iframe {
+            border-radius: 0;
+            box-shadow: none;
+            height: 100dvh !important;
+            min-height: 100dvh;
+            max-height: 100dvh;
+        }
     }
     </style>
     """,
@@ -92,4 +101,4 @@ window.SUPABASE_CONFIG = {json.dumps(config, ensure_ascii=False)};
 </html>
 """
 
-components.html(full_html, height=1220, scrolling=True)
+components.html(full_html, height=820, scrolling=True)

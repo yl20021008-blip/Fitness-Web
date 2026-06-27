@@ -71,3 +71,13 @@ streamlit run admin_dashboard.py
 - 测试题标题字号在手机端进一步压缩
 - 选项卡片间距和高度优化
 - 操作按钮改为普通底部区域，不再 sticky 覆盖内容
+
+
+## v4.1.2 修复
+
+修复 Streamlit iframe 导致底部工具栏出现在页面最底部的问题：
+
+- Streamlit iframe 改为当前视口高度
+- App 内部自己滚动
+- 底部 Tab 固定在可视窗口底部
+- 增加底部安全距离，避免内容被 Tabbar 遮挡

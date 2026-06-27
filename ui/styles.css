@@ -124,3 +124,60 @@ input,textarea{width:100%;border:1px solid var(--line);border-radius:18px;backgr
     margin: 8px 0 14px;
   }
 }
+
+
+/* ===== v4.1.2 fixed bottom tabbar inside Streamlit iframe ===== */
+/* 让 Streamlit iframe 内部自己滚动，底部工具栏固定在当前可视窗口底部 */
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+#fitpersona-root {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.app {
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
+}
+
+.top {
+  position: sticky;
+  top: 0;
+}
+
+.tabbar {
+  position: fixed;
+  left: 50%;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 999;
+}
+
+/* 避免最后一屏内容被固定 tabbar 遮挡 */
+.view::after {
+  content: "";
+  display: block;
+  height: 18px;
+}
+
+@media (max-width: 640px) {
+  .app {
+    max-width: none;
+    width: 100%;
+    padding-bottom: calc(108px + env(safe-area-inset-bottom));
+  }
+
+  .tabbar {
+    bottom: max(8px, env(safe-area-inset-bottom));
+  }
+}
