@@ -112,3 +112,8 @@ Secrets 填同样内容。
 
 这一版前台默认 `consent = true`。  
 用户进入页面后，如果不关闭匿名提交，完成测试后会自动写入 `fitpersona_responses`。
+
+
+## v4.1.1 页面修复
+
+如果你已经部署过旧版，上传本版覆盖 GitHub 后，在 Streamlit Cloud 点击 Reboot / Rerun 即可刷新。

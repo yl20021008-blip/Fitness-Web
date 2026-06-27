@@ -35,3 +35,92 @@ input,textarea{width:100%;border:1px solid var(--line);border-radius:18px;backgr
 .tabbar{position:fixed;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:20;width:min(740px,calc(100% - 18px));display:grid;grid-template-columns:repeat(6,1fr);gap:4px;border:1px solid var(--line);background:rgba(255,249,242,.86);backdrop-filter:blur(18px);border-radius:24px;padding:7px;box-shadow:0 18px 50px rgba(64,53,47,.16)}.tabbar button{border:0;background:transparent;border-radius:18px;padding:7px 2px;min-height:48px;display:grid;gap:2px;place-items:center;color:var(--muted)}.tabbar button.on{background:var(--ink);color:var(--paper)}.tabbar i{font-style:normal;font-size:16px;line-height:1}.tabbar span{font-size:11px;font-weight:900}
 @media(min-width:720px){.app{padding:18px 18px 96px}.persona-grid{grid-template-columns:1fr 1fr}.hero,.card,.question,.poster-card{padding:26px}.stats b{font-size:40px}.result-mini{grid-template-columns:auto 1fr}.emoji{width:74px;height:74px;font-size:40px}}
 @media(max-width:360px){.app{padding-left:8px;padding-right:8px}.tabbar{width:calc(100% - 10px);padding:5px}.tabbar span{font-size:10px}.bar-row{grid-template-columns:38px 1fr 38px}.hero,.card,.question,.poster-card{padding:16px;border-radius:24px}}
+
+
+/* ===== v4.1.1 mobile question layout fix ===== */
+/* 修复测试页第 4 个选项被底部 sticky 按钮遮挡的问题 */
+
+.question {
+  min-height: auto;
+  padding-bottom: 18px;
+}
+
+.question h1 {
+  font-size: clamp(28px, 8.2vw, 46px);
+  line-height: 1.08;
+  letter-spacing: -0.065em;
+  margin: 14px 0 16px;
+}
+
+.options {
+  gap: 9px;
+}
+
+.option {
+  padding: 14px 15px;
+  min-height: auto;
+}
+
+.option b {
+  font-size: 15px;
+  line-height: 1.32;
+}
+
+.option span {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* 原来的 sticky-actions 会挡住最后一个选项，改成普通按钮区 */
+.sticky-actions {
+  position: static;
+  bottom: auto;
+  background: transparent;
+  backdrop-filter: none;
+  padding: 0;
+  border-radius: 0;
+  margin-top: 14px;
+}
+
+.sticky-actions button {
+  min-height: 46px;
+}
+
+@media (max-width: 420px) {
+  .question {
+    padding: 16px;
+  }
+
+  .question h1 {
+    font-size: clamp(27px, 8.6vw, 38px);
+    margin: 12px 0 14px;
+  }
+
+  .option {
+    padding: 13px 14px;
+    border-radius: 19px;
+  }
+
+  .option b {
+    font-size: 14.5px;
+  }
+
+  .option span {
+    font-size: 11.5px;
+  }
+}
+
+@media (max-height: 760px) {
+  .question h1 {
+    font-size: clamp(26px, 7.6vw, 40px);
+    margin: 10px 0 12px;
+  }
+
+  .option {
+    padding: 12px 14px;
+  }
+
+  .progress {
+    margin: 8px 0 14px;
+  }
+}
