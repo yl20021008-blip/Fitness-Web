@@ -106,3 +106,9 @@ Secrets 填同样内容。
 - created_at：提交时间
 
 不收集手机号、微信、姓名和精准定位。
+
+
+## v4.1 默认匿名提交
+
+这一版前台默认 `consent = true`。  
+用户进入页面后，如果不关闭匿名提交，完成测试后会自动写入 `fitpersona_responses`。

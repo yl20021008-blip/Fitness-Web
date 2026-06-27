@@ -7,7 +7,7 @@
 - 手机端优先测试页
 - 20 道运动习惯画像题
 - 16 种健身抽象人格
-- 用户同意后匿名上传测试结果到 Supabase
+- 默认开启匿名上传测试结果到 Supabase，用户可在首页手动关闭
 - 本地保留历史记录、任务、反馈
 - 后台分析页 `admin_dashboard.py`
 - CSV 导出
@@ -54,3 +54,10 @@ streamlit run admin_dashboard.py
 
 不要把真实 `.streamlit/secrets.toml` 上传 GitHub。  
 真实密钥请放在 Streamlit Cloud 的 Secrets 页面。
+
+
+## v4.1 说明
+
+这一版已经改成默认开启匿名提交。  
+首页会显示说明：不收集手机号、微信、姓名和精准定位，只记录测试答案、结果、设备宽度、浏览器信息等匿名数据。  
+用户可以在首页手动关闭匿名提交。

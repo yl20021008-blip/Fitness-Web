@@ -9,7 +9,8 @@ const defaultState = {
   history: [],
   tasks: {},
   notes: [],
-  consent: false,
+  consent: true,
+  consentTouched: false,
   participantId: "",
   lastSubmitStatus: ""
 };
@@ -213,6 +214,7 @@ window.startTest = startTest;
 window.go = go;
 window.toggleConsent = function(){
   state.consent = !state.consent;
+  state.consentTouched = true;
   save();
   render();
   logEvent("toggle_consent", {consent: state.consent});
@@ -222,6 +224,7 @@ window.resetAll = function(){
     const oldParticipant = state.participantId;
     state = structuredClone(defaultState);
     state.participantId = oldParticipant || "";
+    state.consent = true;
     save();
     render();
   }
@@ -243,7 +246,7 @@ function homePage(){
       <p>发到小红书后，用户同意即可把匿名测试结果写入后台，方便你后续分析人群画像、题目选择、设备和来源。</p>
       <div class="consent">
         <button class="switch ${state.consent?'on':''}" onclick="toggleConsent()"><i></i></button>
-        <div><b>允许匿名提交测试结果用于研究分析</b><p>不收集手机号、微信、姓名和精准定位；只记录答案、结果、设备宽度、浏览器信息等匿名数据。</p></div>
+        <div><b>匿名提交测试结果已默认开启，可手动关闭</b><p>不收集手机号、微信、姓名和精准定位；只记录答案、结果、设备宽度、浏览器信息等匿名数据，用于人群画像分析。</p></div>
       </div>
       <div class="hero-actions">
         <button class="primary big" onclick="startTest()">开始测试</button>
