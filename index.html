@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>健身人格抽象图鉴｜Fitness Persona</title>
+  <meta name="description" content="一个小红书低饱和贴纸风的健身人格抽象测试 Web App。" />
+  <meta name="theme-color" content="#d9cbbf" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="grain"></div>
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="健身人格抽象图鉴首页">
+      <span class="brand-mark">✦</span>
+      <span>健身人格抽象图鉴</span>
+    </a>
+    <nav class="nav">
+      <a href="#test">开始测试</a>
+      <a href="#gallery">人格图鉴</a>
+      <a href="#match">搭子匹配</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="home" class="hero section">
+      <div class="hero-copy">
+        <div class="eyebrow">Morandi Fitness Persona · Web App</div>
+        <h1>你不是不健身，<br />你只是还没找到自己的健身物种。</h1>
+        <p>
+          一套「健身行为人格」抽象测试：不评价身材，不制造焦虑，
+          只观察你在运动里的动机、社交半径、训练方式和生活状态。
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#test">开始测试</a>
+          <a class="button ghost" href="#gallery">先看16种人格</a>
+        </div>
+      </div>
+
+      <div class="hero-card sticker-card">
+        <div class="tape tape-left"></div>
+        <div class="tape tape-right"></div>
+        <div class="floating-sticker s1">工位拉伸小妖怪</div>
+        <div class="floating-sticker s2">复古健身房幽灵</div>
+        <div class="floating-sticker s3">松弛自救生物</div>
+        <div class="mascot">
+          <div class="mascot-face">☁︎</div>
+          <div class="mascot-body">GYM<br/>MOOD</div>
+        </div>
+        <p class="card-caption">
+          像 MBTI 一样轻松，但更适合运动搭子、社交平台和结果海报。
+        </p>
+      </div>
+    </section>
+
+    <section id="test" class="section panel">
+      <div class="section-head">
+        <div>
+          <span class="pill">16 Questions</span>
+          <h2>健身人格测试</h2>
+          <p>每题选更像你的那个答案。结果仅用于娱乐与习惯建议，不是医学或专业运动诊断。</p>
+        </div>
+        <button id="restartBtn" class="button small ghost" type="button">重新开始</button>
+      </div>
+      <div id="testApp" class="test-app"></div>
+    </section>
+
+    <section id="gallery" class="section panel">
+      <div class="section-head">
+        <div>
+          <span class="pill">Persona Gallery</span>
+          <h2>16种健身抽象人格</h2>
+          <p>每一种都不是标签，而是一种运动生活方式的切片。</p>
+        </div>
+      </div>
+      <div id="galleryGrid" class="gallery-grid"></div>
+    </section>
+
+    <section id="match" class="section panel">
+      <div class="section-head">
+        <div>
+          <span class="pill">Gym Buddy</span>
+          <h2>健身搭子匹配</h2>
+          <p>输入两个四字母人格代码，看看你们适合一起撸铁、散步、团课还是互相劝退。</p>
+        </div>
+      </div>
+
+      <div class="match-box">
+        <label>
+          你的代码
+          <input id="codeA" type="text" maxlength="4" placeholder="例如 VASL" />
+        </label>
+        <label>
+          搭子的代码
+          <input id="codeB" type="text" maxlength="4" placeholder="例如 RFSG" />
+        </label>
+        <button id="matchBtn" class="button primary" type="button">生成匹配报告</button>
+      </div>
+      <div id="matchResult" class="match-result"></div>
+    </section>
+
+    <section class="section footer-note">
+      <p>
+        设计提示：这个项目适合部署到 GitHub Pages、Vercel 或 Netlify。
+        当前版本为纯前端静态项目，无需后端。
+      </p>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>

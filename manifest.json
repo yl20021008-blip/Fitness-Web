@@ -1,0 +1,16 @@
+{
+  "name": "健身人格抽象图鉴",
+  "short_name": "健身人格",
+  "description": "小红书低饱和贴纸风的健身人格抽象测试 Web App。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f1ea",
+  "theme_color": "#d9cbbf",
+  "icons": [
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
