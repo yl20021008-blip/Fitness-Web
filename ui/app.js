@@ -1,5 +1,6 @@
 const DATA = window.FITPERSONA;
-const STORE = "fitpersona_mobile_v3";
+const CONFIG = window.SUPABASE_CONFIG || { enabled:false };
+const STORE = "fitpersona_mobile_v4_supabase";
 
 const defaultState = {
   page: "home",
@@ -7,10 +8,18 @@ const defaultState = {
   answers: [],
   history: [],
   tasks: {},
-  notes: []
+  notes: [],
+  consent: false,
+  participantId: "",
+  lastSubmitStatus: ""
 };
 
 let state = load();
+if (!state.participantId) {
+  state.participantId = crypto.randomUUID ? crypto.randomUUID() : "p_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+  save();
+}
+
 const root = document.getElementById("fitpersona-root");
 
 function load() {
@@ -37,6 +46,31 @@ function scoreAnswers() {
 function codeFromScore(s) {
   return DATA.pairs.map(([a,b]) => s[a] >= s[b] ? a : b).join("");
 }
+function dimensionPayload(score) {
+  return {
+    R_percent: pct(score,"R","V"),
+    F_percent: pct(score,"F","A"),
+    C_percent: pct(score,"C","S"),
+    G_percent: pct(score,"G","L"),
+    raw: score
+  };
+}
+function answerPayload() {
+  return state.answers.map((answer, qi) => {
+    const q = DATA.questions[qi];
+    const opt = q.a[answer];
+    return {
+      question_id: qi + 1,
+      group: q.group,
+      axis: q.axis,
+      question: q.q,
+      answer_index: answer,
+      answer_text: opt.t,
+      answer_hint: opt.h,
+      score: opt.s
+    };
+  });
+}
 function pct(s,a,b) {
   const total = s[a] + s[b] || 1;
   return Math.round(s[a] / total * 100);
@@ -49,6 +83,82 @@ function fmt(t) {
   return new Date(t).toLocaleString("zh-CN", {month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"});
 }
 function esc(x){ return String(x || "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
+
+async function supabaseInsert(table, row) {
+  if (!CONFIG.enabled || !CONFIG.url || !CONFIG.anonKey || !state.consent) return { skipped:true };
+  const url = `${CONFIG.url.replace(/\/$/,"")}/rest/v1/${table}`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "apikey": CONFIG.anonKey,
+      "Authorization": `Bearer ${CONFIG.anonKey}`,
+      "Content-Type": "application/json",
+      "Prefer": "return=minimal"
+    },
+    body: JSON.stringify(row)
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(text || `HTTP ${resp.status}`);
+  }
+  return { ok:true };
+}
+async function submitResponse(res) {
+  if (!state.consent) {
+    state.lastSubmitStatus = "未上传：用户未开启匿名数据提交。";
+    save();
+    return;
+  }
+  if (!CONFIG.enabled) {
+    state.lastSubmitStatus = "未上传：Supabase 未配置。";
+    save();
+    return;
+  }
+  const p = persona(res.code);
+  const row = {
+    participant_id: state.participantId,
+    result_id: res.id,
+    result_code: res.code,
+    persona_name: p.name,
+    score: res.score,
+    dimensions: res.dimensions,
+    answers: res.answers,
+    consent: true,
+    app_version: CONFIG.appVersion || DATA.meta.version,
+    user_agent: navigator.userAgent.slice(0, 500),
+    screen_width: window.screen.width || null,
+    screen_height: window.screen.height || null,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+    language: navigator.language || "",
+    referrer: document.referrer || "",
+    page_url: location.href,
+    payload: {
+      trend_keywords: DATA.meta.trendKeywords,
+      local_time: new Date().toISOString()
+    }
+  };
+  try {
+    await supabaseInsert("fitpersona_responses", row);
+    state.lastSubmitStatus = "已匿名上传到后台。";
+  } catch (e) {
+    state.lastSubmitStatus = "上传失败：" + e.message.slice(0, 160);
+  }
+  save();
+}
+async function logEvent(eventName, payload={}) {
+  if (!CONFIG.enabled || !state.consent) return;
+  try {
+    await supabaseInsert("fitpersona_events", {
+      participant_id: state.participantId,
+      event_name: eventName,
+      result_code: lastResult() ? lastResult().code : null,
+      app_version: CONFIG.appVersion || DATA.meta.version,
+      payload,
+      user_agent: navigator.userAgent.slice(0, 500),
+      page_url: location.href
+    });
+  } catch(e) {}
+}
 
 function render() {
   root.innerHTML = `
@@ -95,26 +205,46 @@ function startTest(){
   state.page = "test";
   state.qIndex = 0;
   state.answers = [];
-  save(); render();
+  save();
+  logEvent("start_test");
+  render();
 }
 window.startTest = startTest;
 window.go = go;
+window.toggleConsent = function(){
+  state.consent = !state.consent;
+  save();
+  render();
+  logEvent("toggle_consent", {consent: state.consent});
+};
 window.resetAll = function(){
-  if(confirm("确定清空本地测试、任务和记录吗？")) {
+  if(confirm("确定清空本地测试、任务和记录吗？不会删除已上传到后台的数据。")) {
+    const oldParticipant = state.participantId;
     state = structuredClone(defaultState);
-    save(); render();
+    state.participantId = oldParticipant || "";
+    save();
+    render();
   }
 };
 
+function analyticsBadge(){
+  if(!CONFIG.enabled) return `<span class="badge warn">后台未配置</span>`;
+  if(state.consent) return `<span class="badge ok">匿名上传已开启</span>`;
+  return `<span class="badge">匿名上传未开启</span>`;
+}
 function homePage(){
   const res = lastResult();
   const p = res ? persona(res.code) : null;
   const task = taskInfo();
   return `
     <section class="hero">
-      <span class="pill">mobile-first · v3</span>
+      <div class="section-head"><span class="pill">mobile-first · v4 数据版</span>${analyticsBadge()}</div>
       <h1>测测你是哪种健身物种</h1>
-      <p>根据运动搭子、健身打卡、居家锻炼、空腹有氧、工位拉伸、低冲击、力量训练、恢复和 gym goblin 等真实社交平台词条重构。</p>
+      <p>发到小红书后，用户同意即可把匿名测试结果写入后台，方便你后续分析人群画像、题目选择、设备和来源。</p>
+      <div class="consent">
+        <button class="switch ${state.consent?'on':''}" onclick="toggleConsent()"><i></i></button>
+        <div><b>允许匿名提交测试结果用于研究分析</b><p>不收集手机号、微信、姓名和精准定位；只记录答案、结果、设备宽度、浏览器信息等匿名数据。</p></div>
+      </div>
       <div class="hero-actions">
         <button class="primary big" onclick="startTest()">开始测试</button>
         <button class="big" onclick="go('gallery')">看16种人格</button>
@@ -123,18 +253,19 @@ function homePage(){
 
     <section class="stats">
       <div><b>${res ? res.code : "--"}</b><span>最近人格</span></div>
-      <div><b>${state.history.length}</b><span>测试次数</span></div>
+      <div><b>${state.history.length}</b><span>本机测试</span></div>
       <div><b>${task.done}/${task.total}</b><span>今日任务</span></div>
     </section>
 
     <section class="card">
       <div class="section-head"><span class="pill">当前画像</span>${res ? `<button class="mini" onclick="downloadPoster('${res.id}')">海报</button>` : ""}</div>
       ${p ? resultMini(res) : `<div class="empty">完成一次测试后，会生成你的人格、雷达图、每日任务和分享海报。</div>`}
+      ${state.lastSubmitStatus ? `<p class="submit-status">${state.lastSubmitStatus}</p>` : ""}
     </section>
 
     <section class="card">
       <span class="pill">趋势词条</span>
-      <h2>这版问题围绕真实运动内容习惯重做</h2>
+      <h2>问题围绕真实运动内容习惯重做</h2>
       <div class="chips">${DATA.meta.trendKeywords.map(k=>`<span>${k}</span>`).join("")}</div>
     </section>
   `;
@@ -199,11 +330,21 @@ window.prevQ = function(){
 function finishTest(){
   const score = scoreAnswers();
   const code = codeFromScore(score);
-  const res = {id:"r"+Date.now(), code, score, time:Date.now()};
+  const res = {
+    id:"r"+Date.now(),
+    code,
+    score,
+    dimensions: dimensionPayload(score),
+    answers: answerPayload(),
+    time:Date.now()
+  };
   state.history.unshift(res);
   state.history = state.history.slice(0, 60);
   state.qIndex = 0;
   state.answers = [];
+  save();
+  submitResponse(res);
+  logEvent("complete_test", { result_code: code });
   state.page = "home";
   save();
   return resultPage(res);
@@ -257,9 +398,7 @@ function planPage(){
       <p>像背单词一样，每天只完成一点点。先不断线，再谈升级。</p>
       ${p ? `<div class="small-profile"><div class="emoji">${p.emoji}</div><div><b>${res.code}｜${p.name}</b><p>${p.advice}</p></div></div>` : `<div class="empty">先完成测试，会生成更贴合你的人格任务。</div>`}
     </section>
-    <section class="stats one">
-      <div><b>${info.done}/${info.total}</b><span>${today()} 完成度</span></div>
-    </section>
+    <section class="stats one"><div><b>${info.done}/${info.total}</b><span>${today()} 完成度</span></div></section>
     <section class="card">
       <h2>任务清单</h2>
       <div class="task-list">${taskList(true)}</div>
@@ -287,7 +426,9 @@ function bindPlan(){
       const key = today();
       state.tasks[key] = state.tasks[key] || {};
       state.tasks[key][btn.dataset.task] = !state.tasks[key][btn.dataset.task];
-      save(); render();
+      save();
+      logEvent("task_toggle", {task_index: btn.dataset.task, done: state.tasks[key][btn.dataset.task]});
+      render();
     };
   });
 }
@@ -298,7 +439,10 @@ window.saveNote = function(){
   if(!text) return alert("先写一点反馈再保存。");
   state.notes.unshift({time:Date.now(), text});
   state.notes = state.notes.slice(0,80);
-  save(); alert("已保存"); render();
+  save();
+  logEvent("save_note", {text_length: text.length});
+  alert("已保存");
+  render();
 };
 
 function galleryPage(){
@@ -336,7 +480,6 @@ function bindGallery(){
     };
   });
 }
-
 function matchPage(){
   const res = lastResult();
   return `
@@ -366,14 +509,15 @@ function bindMatch(){
     else if(a[3]!==b[3]) text = "一个去场馆，一个在生活里移动，建议先约散步/拉伸/轻徒步。";
     else if(a[2]!==b[2]) text = "一人开麦，一人戴耳机，适合同场不同练。";
     box.innerHTML = `<span class="pill">${persona(a).name} × ${persona(b).name}</span><h1 class="score">${score}%</h1><p>${text}</p>`;
+    logEvent("match", {code_a:a, code_b:b, match_score:score});
   };
 }
-
 function historyPage(){
   return `
     <section class="card">
       <span class="pill">History</span>
       <h1>记录</h1>
+      <p>本页是本机记录。后台分析请打开 admin_dashboard.py 部署页。</p>
       <div class="actions"><button class="primary" onclick="exportData()">导出JSON</button><button onclick="clearHistory()">清空历史</button></div>
     </section>
     <section class="list">
@@ -389,7 +533,7 @@ function historyPage(){
   `;
 }
 window.clearHistory = function(){
-  if(confirm("确定清空历史？")) { state.history=[]; save(); render(); }
+  if(confirm("确定清空本机历史？不会删除已上传到后台的数据。")) { state.history=[]; save(); render(); }
 };
 window.exportData = function(){
   const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});

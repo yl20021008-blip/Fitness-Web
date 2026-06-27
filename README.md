@@ -1,20 +1,34 @@
-# FitPersona Mobile Streamlit v3
+# FitPersona Mobile Supabase v4
 
-手机端优先的健身人格抽象图鉴 Web App。  
-可以直接上传 GitHub，然后用 Streamlit Community Cloud 部署。
+手机端优先 + Supabase 后台数据收集版。
 
-## 项目结构
+## 功能
+
+- 手机端优先测试页
+- 20 道运动习惯画像题
+- 16 种健身抽象人格
+- 用户同意后匿名上传测试结果到 Supabase
+- 本地保留历史记录、任务、反馈
+- 后台分析页 `admin_dashboard.py`
+- CSV 导出
+- 分享海报下载
+
+## 文件结构
 
 ```txt
-fitpersona-mobile-streamlit-v3/
-├── app.py
+fitpersona-mobile-supabase-v4/
+├── app.py                  # 小红书用户访问的前台
+├── admin_dashboard.py      # 你自己看的后台分析页
 ├── requirements.txt
 ├── index.html
 ├── README.md
 ├── DEPLOYMENT.md
 ├── .gitignore
 ├── .streamlit/
-│   └── config.toml
+│   ├── config.toml
+│   └── secrets.example.toml
+├── sql/
+│   └── supabase_schema.sql
 ├── assets/
 │   └── favicon.svg
 └── ui/
@@ -23,36 +37,20 @@ fitpersona-mobile-streamlit-v3/
     └── app.js
 ```
 
-## 本地运行
+## 运行
 
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Streamlit Cloud 部署
+后台：
 
-Main file path 填：
-
-```txt
-app.py
+```bash
+streamlit run admin_dashboard.py
 ```
 
-## v3 升级点
+## 注意
 
-- 手机端优先布局
-- 底部 Tab 导航
-- 大按钮、大卡片、适配 iPhone/Android
-- 20 道题，按真实运动社交词条重构
-- 首页、测试、今日任务、图鉴、搭子匹配、记录
-- localStorage 本地保存
-- 下载分享海报
-- 导出 JSON
-
-## 修改题目和人格
-
-改 `ui/data.js`。
-
-## 修改视觉
-
-改 `ui/styles.css`。
+不要把真实 `.streamlit/secrets.toml` 上传 GitHub。  
+真实密钥请放在 Streamlit Cloud 的 Secrets 页面。

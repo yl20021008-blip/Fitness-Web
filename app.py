@@ -1,6 +1,7 @@
+import json
+from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
-from pathlib import Path
 
 st.set_page_config(
     page_title="FitPersona Mobile｜健身人格抽象图鉴",
@@ -11,6 +12,22 @@ st.set_page_config(
 
 BASE = Path(__file__).parent
 UI = BASE / "ui"
+
+def get_secret(section: str, key: str, default: str = "") -> str:
+    try:
+        return st.secrets.get(section, {}).get(key, default)
+    except Exception:
+        return default
+
+supabase_url = get_secret("supabase", "url")
+supabase_anon_key = get_secret("supabase", "anon_key")
+
+config = {
+    "enabled": bool(supabase_url and supabase_anon_key),
+    "url": supabase_url,
+    "anonKey": supabase_anon_key,
+    "appVersion": "v4.0-mobile-supabase",
+}
 
 css = (UI / "styles.css").read_text(encoding="utf-8")
 data_js = (UI / "data.js").read_text(encoding="utf-8")
@@ -23,12 +40,8 @@ st.markdown(
         padding: 0.35rem 0.35rem 0.8rem;
         max-width: 980px;
     }
-    header[data-testid="stHeader"] {
-        display: none;
-    }
-    footer {
-        display: none;
-    }
+    header[data-testid="stHeader"] { display: none; }
+    footer { display: none; }
     iframe {
         border: 0 !important;
         border-radius: 22px;
@@ -36,18 +49,29 @@ st.markdown(
         background: #F7F0E8;
     }
     @media (max-width: 640px) {
-        .block-container {
-            padding: 0;
-        }
-        iframe {
-            border-radius: 0;
-            box-shadow: none;
-        }
+        .block-container { padding: 0; }
+        iframe { border-radius: 0; box-shadow: none; }
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
+with st.expander("后台数据说明 / Data Notice", expanded=False):
+    st.markdown(
+        """
+        这个前台会在用户同意后，把匿名测试结果写入 Supabase。
+        如果没有配置 Supabase Secrets，App 仍可正常使用，但不会上传数据。
+
+        需要在 Streamlit Secrets 里配置：
+
+        ```toml
+        [supabase]
+        url = "https://xxxx.supabase.co"
+        anon_key = "你的 anon public key"
+        ```
+        """
+    )
 
 full_html = f"""
 <!DOCTYPE html>
@@ -59,10 +83,13 @@ full_html = f"""
 </head>
 <body>
 <div id="fitpersona-root"></div>
+<script>
+window.SUPABASE_CONFIG = {json.dumps(config, ensure_ascii=False)};
+</script>
 <script>{data_js}</script>
 <script>{app_js}</script>
 </body>
 </html>
 """
 
-components.html(full_html, height=1180, scrolling=True)
+components.html(full_html, height=1220, scrolling=True)
