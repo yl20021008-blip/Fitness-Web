@@ -1,15 +1,7 @@
-# OS
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
 .DS_Store
-Thumbs.db
-
-# Editor
-.vscode/
-.idea/
-
-# Logs
-*.log
-
-# Build outputs if you later migrate to React/Vite
-dist/
-build/
-node_modules/
+.streamlit/secrets.toml
