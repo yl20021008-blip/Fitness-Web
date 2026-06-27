@@ -110,3 +110,9 @@ streamlit run admin_dashboard.py
 - `.streamlit/config.toml` 增加 `client.toolbarMode = "minimal"`
 - `app.py` 增加隐藏 MainMenu、footer、toolbar、status widget 等样式
 - 注意：Streamlit Cloud 的 “Manage app” 浮窗在管理员登录状态下可能仍由平台显示；普通用户通常不会看到。
+
+
+## v4.1.6 修复
+
+修复 v4.1.5 中 `app.py` 的 f-string CSS 大括号导致的 `NameError`。
+同时确认用户端不显示 `后台数据说明 / Data Notice`。

@@ -150,3 +150,9 @@ Manage app -> Reboot app
 
 本版已尽量隐藏 Streamlit 外层控件。  
 如果你自己登录 Streamlit 管理员账号访问，平台仍可能显示 Manage app 浮窗。请用无痕模式或另一台未登录 Streamlit 的手机测试真实用户视角。
+
+
+## v4.1.6 修复
+
+修复 v4.1.5 中 `app.py` 的 f-string CSS 大括号导致的 `NameError`。
+同时确认用户端不显示 `后台数据说明 / Data Notice`。

@@ -91,42 +91,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-with st.expander("后台数据说明 / Data Notice", expanded=False):
-    st.markdown(
-        """
-        这个前台会在用户同意后，把匿名测试结果写入 Supabase。
-        如果没有配置 Supabase Secrets，App 仍可正常使用，但不会上传数据。
-
-        需要在 Streamlit Secrets 里配置：
-
-        ```toml
-        [supabase]
-        url = "https://xxxx.supabase.co"
-        anon_key = "你的 anon public key"
-        ```
-        """
-    )
-
 full_html = f"""
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<style>{css}
-    /* v4.1.5: 尽量隐藏 Streamlit 外层控件 */
-    #MainMenu { visibility: hidden !important; display: none !important; }
-    footer { visibility: hidden !important; display: none !important; }
-    header { visibility: hidden !important; display: none !important; }
-    div[data-testid="stToolbar"] { display: none !important; visibility: hidden !important; }
-    div[data-testid="stStatusWidget"] { display: none !important; visibility: hidden !important; }
-    div[data-testid="stDecoration"] { display: none !important; visibility: hidden !important; }
-    div[data-testid="stDeployButton"] { display: none !important; visibility: hidden !important; }
-    div[data-testid="stActionButton"] { display: none !important; visibility: hidden !important; }
-    button[kind="header"] { display: none !important; visibility: hidden !important; }
-    [data-testid="baseButton-headerNoPadding"] { display: none !important; visibility: hidden !important; }
-
-    </style>
+<style>{css}</style>
 </head>
 <body>
 <div id="fitpersona-root"></div>
