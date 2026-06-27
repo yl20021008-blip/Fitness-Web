@@ -156,3 +156,10 @@ Manage app -> Reboot app
 
 修复 v4.1.5 中 `app.py` 的 f-string CSS 大括号导致的 `NameError`。
 同时确认用户端不显示 `后台数据说明 / Data Notice`。
+
+
+## v4.2 后台页面升级
+
+本版优化了 `admin_dashboard.py` 的视觉和分析功能。  
+上传覆盖 GitHub 后，前台和后台两个 Streamlit App 都建议 Reboot。  
+如果后台报缺少 plotly，请确认 `requirements.txt` 已更新并重新部署。

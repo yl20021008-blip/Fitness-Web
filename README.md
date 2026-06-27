@@ -116,3 +116,21 @@ streamlit run admin_dashboard.py
 
 修复 v4.1.5 中 `app.py` 的 f-string CSS 大括号导致的 `NameError`。
 同时确认用户端不显示 `后台数据说明 / Data Notice`。
+
+
+## v4.2 后台精致化升级
+
+后台 `admin_dashboard.py` 已重做为奶油棕色系数据看板：
+
+- 密码页重新设计
+- 顶部 KPI 卡片
+- 日期 / 人格 / 来源筛选
+- 人格分布柱状图
+- 每日提交趋势
+- 四维倾向均值
+- 题目选项分布
+- 人格 × 选项热力图
+- 来源 src / 设备宽度分析
+- 原始数据与题目明细 CSV 导出
+
+新增依赖：`plotly>=5.22`
