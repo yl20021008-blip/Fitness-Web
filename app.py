@@ -42,6 +42,8 @@ st.markdown(
     }
     header[data-testid="stHeader"] { display: none; }
     footer { display: none; }
+    div[data-testid="stExpander"] { display: none !important; }
+    details { display: none !important; }
     iframe {
         border: 0 !important;
         border-radius: 22px;

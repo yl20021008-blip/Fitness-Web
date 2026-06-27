@@ -81,3 +81,12 @@ streamlit run admin_dashboard.py
 - App 内部自己滚动
 - 底部 Tab 固定在可视窗口底部
 - 增加底部安全距离，避免内容被 Tabbar 遮挡
+
+
+## v4.1.3 修复
+
+移除用户端顶部的 Streamlit 展开栏：
+
+- 删除 “后台数据说明 / Data Notice”
+- 前台页面更干净，适合小红书用户直接进入测试
+- 匿名提交和后台分析功能不受影响

@@ -128,3 +128,13 @@ Manage app -> Reboot app
 ```
 
 手机端也建议清理浏览器缓存或重新打开链接。
+
+
+## v4.1.3 用户端顶部说明移除
+
+本版移除了前台顶部的 “后台数据说明 / Data Notice”。  
+覆盖 GitHub 后，请在 Streamlit Cloud 里点击：
+
+```txt
+Manage app -> Reboot app
+```
