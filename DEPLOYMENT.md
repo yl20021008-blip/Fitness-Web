@@ -138,3 +138,9 @@ Manage app -> Reboot app
 ```txt
 Manage app -> Reboot app
 ```
+
+
+## v4.1.4 顶部区域压缩
+
+本版移除了 App 内部顶部品牌栏，减少手机端浏览器标题栏下方的空白。  
+外部浏览器或小红书 WebView 自带的标题栏不是网页内容，无法通过代码删除。

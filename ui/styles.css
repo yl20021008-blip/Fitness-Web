@@ -181,3 +181,93 @@ body {
     bottom: max(8px, env(safe-area-inset-bottom));
   }
 }
+
+
+/* ===== v4.1.4 compact top for mobile webview ===== */
+/* 去掉 App 内部顶部品牌栏，减少小红书/手机浏览器标题栏下方的空白 */
+
+.top {
+  display: none !important;
+}
+
+.app {
+  padding-top: 0 !important;
+}
+
+.view {
+  padding-top: 0 !important;
+}
+
+.view > :first-child {
+  margin-top: 0 !important;
+}
+
+.hero,
+.card,
+.question,
+.poster-card {
+  margin-top: 0 !important;
+}
+
+/* 前台第一屏更贴顶，但保留一点呼吸感 */
+.hero:first-child,
+.card:first-child,
+.question:first-child,
+.poster-card:first-child {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* 桌面预览时仍保持居中卡片感 */
+@media (min-width: 760px) {
+  .hero:first-child,
+  .card:first-child,
+  .question:first-child,
+  .poster-card:first-child {
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+  }
+
+  .app {
+    padding-top: 10px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .app {
+    max-width: none;
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .view {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .view > section {
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .stats,
+  .persona-grid,
+  .list {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .card,
+  .hero,
+  .question,
+  .poster-card {
+    border-radius: 0 0 28px 28px;
+  }
+
+  .view > section:not(:first-child) {
+    border-radius: 28px;
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+}

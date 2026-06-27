@@ -164,13 +164,6 @@ async function logEvent(eventName, payload={}) {
 function render() {
   root.innerHTML = `
     <div class="app">
-      <header class="top">
-        <div class="brand" onclick="go('home')">
-          <div class="logo">FP</div>
-          <div><b>FitPersona</b><span>健身人格抽象图鉴</span></div>
-        </div>
-        <button class="mini" onclick="resetAll()">清空</button>
-      </header>
       <main class="view">${page()}</main>
       ${tabbar()}
     </div>

@@ -37,8 +37,18 @@ st.markdown(
     """
     <style>
     .block-container {
-        padding: 0.35rem 0.35rem 0.8rem;
+        padding: 0 !important;
+        margin: 0 !important;
         max-width: 980px;
+    }
+    .main .block-container {
+        padding-top: 0 !important;
+    }
+    div[data-testid="stAppViewContainer"] {
+        padding-top: 0 !important;
+    }
+    div[data-testid="stVerticalBlock"] {
+        gap: 0 !important;
     }
     header[data-testid="stHeader"] { display: none; }
     footer { display: none; }
