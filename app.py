@@ -73,6 +73,19 @@ st.markdown(
             max-height: 100dvh;
         }
     }
+    
+    /* v4.1.5: 尽量隐藏 Streamlit 外层控件 */
+    #MainMenu { visibility: hidden !important; display: none !important; }
+    footer { visibility: hidden !important; display: none !important; }
+    header { visibility: hidden !important; display: none !important; }
+    div[data-testid="stToolbar"] { display: none !important; visibility: hidden !important; }
+    div[data-testid="stStatusWidget"] { display: none !important; visibility: hidden !important; }
+    div[data-testid="stDecoration"] { display: none !important; visibility: hidden !important; }
+    div[data-testid="stDeployButton"] { display: none !important; visibility: hidden !important; }
+    div[data-testid="stActionButton"] { display: none !important; visibility: hidden !important; }
+    button[kind="header"] { display: none !important; visibility: hidden !important; }
+    [data-testid="baseButton-headerNoPadding"] { display: none !important; visibility: hidden !important; }
+
     </style>
     """,
     unsafe_allow_html=True,
@@ -100,7 +113,20 @@ full_html = f"""
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<style>{css}</style>
+<style>{css}
+    /* v4.1.5: 尽量隐藏 Streamlit 外层控件 */
+    #MainMenu { visibility: hidden !important; display: none !important; }
+    footer { visibility: hidden !important; display: none !important; }
+    header { visibility: hidden !important; display: none !important; }
+    div[data-testid="stToolbar"] { display: none !important; visibility: hidden !important; }
+    div[data-testid="stStatusWidget"] { display: none !important; visibility: hidden !important; }
+    div[data-testid="stDecoration"] { display: none !important; visibility: hidden !important; }
+    div[data-testid="stDeployButton"] { display: none !important; visibility: hidden !important; }
+    div[data-testid="stActionButton"] { display: none !important; visibility: hidden !important; }
+    button[kind="header"] { display: none !important; visibility: hidden !important; }
+    [data-testid="baseButton-headerNoPadding"] { display: none !important; visibility: hidden !important; }
+
+    </style>
 </head>
 <body>
 <div id="fitpersona-root"></div>

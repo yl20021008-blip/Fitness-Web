@@ -144,3 +144,9 @@ Manage app -> Reboot app
 
 本版移除了 App 内部顶部品牌栏，减少手机端浏览器标题栏下方的空白。  
 外部浏览器或小红书 WebView 自带的标题栏不是网页内容，无法通过代码删除。
+
+
+## v4.1.5 右下角 Streamlit 浮窗
+
+本版已尽量隐藏 Streamlit 外层控件。  
+如果你自己登录 Streamlit 管理员账号访问，平台仍可能显示 Manage app 浮窗。请用无痕模式或另一台未登录 Streamlit 的手机测试真实用户视角。
