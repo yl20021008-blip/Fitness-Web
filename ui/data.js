@@ -2,7 +2,7 @@ window.FITPERSONA = {
   meta: {
     name: "FitPersona Mobile",
     subtitle: "健身人格抽象图鉴",
-    version: "v4.0-mobile-supabase",
+    version: "v4.3-privacy-funnel",
     trendKeywords: [
       "运动搭子", "健身打卡", "我的健身日常", "健身vlog", "居家锻炼",
       "空腹有氧", "有氧燃脂操", "不伤膝盖", "工位锻炼", "晒背",
