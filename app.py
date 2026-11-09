@@ -26,7 +26,7 @@ config = {
     "enabled": bool(supabase_url and supabase_anon_key),
     "url": supabase_url,
     "anonKey": supabase_anon_key,
-    "appVersion": "v4.0-mobile-supabase",
+    "appVersion": "v4.3-privacy-funnel",
 }
 
 css = (UI / "styles.css").read_text(encoding="utf-8")

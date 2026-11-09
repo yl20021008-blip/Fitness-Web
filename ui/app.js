@@ -9,13 +9,21 @@ const defaultState = {
   history: [],
   tasks: {},
   notes: [],
-  consent: true,
+  consent: false,
   consentTouched: false,
+  testRunId: "",
+  testStartedAt: 0,
+  resultFeedback: {},
   participantId: "",
   lastSubmitStatus: ""
 };
 
 let state = load();
+// Upgrade older saved state: passive default collection is never consent.
+if (!state.consentTouched) {
+  state.consent = false;
+  save();
+}
 if (!state.participantId) {
   state.participantId = crypto.randomUUID ? crypto.randomUUID() : "p_" + Date.now() + "_" + Math.random().toString(16).slice(2);
   save();
@@ -31,8 +39,30 @@ function load() {
   }
 }
 function save() { localStorage.setItem(STORE, JSON.stringify(state)); }
-function go(page) { state.page = page; save(); render(); window.scrollTo(0,0); }
-function today() { return new Date().toISOString().slice(0,10); }
+function go(page) {
+  if (state.page === "test" && page !== "test" && state.answers.length < DATA.questions.length) {
+    logEvent("leave_test", {test_run_id:state.testRunId, answered_count:state.answers.length});
+  }
+  state.page = page;
+  save(); render(); window.scrollTo(0,0);
+}
+function today() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+function taskKey() { return `${today()}:${lastResult()?.code || "default"}`; }
+function sourceTag() {
+  // The app runs in a Streamlit iframe; parent URL can appear in referrer.
+  for (const value of [location.href, document.referrer]) {
+    try {
+      const url = new URL(value);
+      const tag = url.searchParams.get("src") || url.searchParams.get("utm_source");
+      if (tag) return tag.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40) || "direct";
+    } catch (err) {}
+  }
+  return "direct";
+}
 function lastResult(){ return state.history[0] || null; }
 function persona(code){ return DATA.personas[code]; }
 function scoreAnswers() {
@@ -73,8 +103,14 @@ function answerPayload() {
   });
 }
 function pct(s,a,b) {
-  const total = s[a] + s[b] || 1;
-  return Math.round(s[a] / total * 100);
+  const total = s[a] + s[b];
+  return total > 0 ? Math.round(s[a] / total * 100) : 50;
+}
+function unclearPairs(score) {
+  return DATA.pairs.filter(([a,b]) => {
+    const total = score[a] + score[b];
+    return !total || Math.abs(score[a] - score[b]) / total < 0.12;
+  });
 }
 function rgba(hex, alpha) {
   const n = parseInt(hex.replace("#",""), 16);
@@ -126,13 +162,8 @@ async function submitResponse(res) {
     answers: res.answers,
     consent: true,
     app_version: CONFIG.appVersion || DATA.meta.version,
-    user_agent: navigator.userAgent.slice(0, 500),
-    screen_width: window.screen.width || null,
-    screen_height: window.screen.height || null,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
-    language: navigator.language || "",
-    referrer: document.referrer || "",
-    page_url: location.href,
+    screen_width: Math.round((window.innerWidth || 0) / 100) * 100 || null,
+    page_url: "?src=" + encodeURIComponent(sourceTag()),
     payload: {
       trend_keywords: DATA.meta.trendKeywords,
       local_time: new Date().toISOString()
@@ -155,8 +186,7 @@ async function logEvent(eventName, payload={}) {
       result_code: lastResult() ? lastResult().code : null,
       app_version: CONFIG.appVersion || DATA.meta.version,
       payload,
-      user_agent: navigator.userAgent.slice(0, 500),
-      page_url: location.href
+      page_url: "?src=" + encodeURIComponent(sourceTag())
     });
   } catch(e) {}
 }
@@ -196,11 +226,16 @@ function bind(){
   if(canvas && lastResult()) drawRadar(canvas, lastResult().score, persona(lastResult().code).color);
 }
 function startTest(){
+  if (state.page === "test" && state.answers.length) {
+    logEvent("restart_test", {test_run_id:state.testRunId, answered_count:state.answers.length});
+  }
   state.page = "test";
   state.qIndex = 0;
   state.answers = [];
+  state.testRunId = crypto.randomUUID ? crypto.randomUUID() : "run_" + Date.now();
+  state.testStartedAt = Date.now();
   save();
-  logEvent("start_test");
+  logEvent("start_test", {test_run_id:state.testRunId});
   render();
 }
 window.startTest = startTest;
@@ -210,23 +245,21 @@ window.toggleConsent = function(){
   state.consentTouched = true;
   save();
   render();
-  logEvent("toggle_consent", {consent: state.consent});
+  // Consent choices stay on this device; do not upload consent-toggle events.
 };
 window.resetAll = function(){
   if(confirm("确定清空本地测试、任务和记录吗？不会删除已上传到后台的数据。")) {
-    const oldParticipant = state.participantId;
     state = structuredClone(defaultState);
-    state.participantId = oldParticipant || "";
-    state.consent = true;
+    state.participantId = crypto.randomUUID ? crypto.randomUUID() : "p_" + Date.now();
     save();
     render();
   }
 };
 
 function analyticsBadge(){
-  if(!CONFIG.enabled) return `<span class="badge warn">后台未配置</span>`;
-  if(state.consent) return `<span class="badge ok">匿名上传已开启</span>`;
-  return `<span class="badge">匿名上传未开启</span>`;
+  if(!CONFIG.enabled) return `<span class="badge warn">云端不可用 · 仅本机</span>`;
+  if(state.consent) return `<span class="badge ok">已同意去标识化统计</span>`;
+  return `<span class="badge">默认仅本机保存</span>`;
 }
 function homePage(){
   const res = lastResult();
@@ -234,12 +267,12 @@ function homePage(){
   const task = taskInfo();
   return `
     <section class="hero">
-      <div class="section-head"><span class="pill">mobile-first · v4 数据版</span>${analyticsBadge()}</div>
+      <div class="section-head"><span class="pill">mobile-first · v4.3 体验版</span>${analyticsBadge()}</div>
       <h1>测测你是哪种健身物种</h1>
-      <p>发到小红书后，用户同意即可把匿名测试结果写入后台，方便你后续分析人群画像、题目选择、设备和来源。</p>
+      <p>20题探索运动偏好，领取适合你尝试的轻量任务；测试结果仅供自我探索，不是经验证的人格或运动诊断。</p>
       <div class="consent">
-        <button class="switch ${state.consent?'on':''}" onclick="toggleConsent()"><i></i></button>
-        <div><b>匿名提交测试结果已默认开启，可手动关闭</b><p>不收集手机号、微信、姓名和精准定位；只记录答案、结果、设备宽度、浏览器信息等匿名数据，用于人群画像分析。</p></div>
+        <button type="button" class="switch ${state.consent?'on':''}" aria-label="允许上传去标识化测试数据" aria-pressed="${state.consent}" onclick="toggleConsent()"><i></i></button>
+        <div><b>默认仅保存在本机；你可以主动同意参与匿名统计</b><p>开启后上传测试答案、结果、去标识化用户代码、粗略设备宽度与来源标签。不上传姓名、手机号、精确位置或完整浏览器标识；关闭仅影响后续上传，历史云端记录不会自动删除。</p></div>
       </div>
       <div class="hero-actions">
         <button class="primary big" onclick="startTest()">开始测试</button>
@@ -312,6 +345,9 @@ function bindTest(){
     btn.onclick = () => {
       state.answers[state.qIndex] = Number(btn.dataset.answer);
       state.qIndex += 1;
+      if ([5, 10, 15].includes(state.qIndex)) {
+        logEvent("question_progress", {test_run_id:state.testRunId, answered_count:state.qIndex});
+      }
       save(); render();
     };
   });
@@ -324,6 +360,8 @@ window.prevQ = function(){
   }
 };
 function finishTest(){
+  const completedRunId = state.testRunId;
+  const elapsedMs = state.testStartedAt ? Math.max(0, Date.now() - state.testStartedAt) : null;
   const score = scoreAnswers();
   const code = codeFromScore(score);
   const res = {
@@ -340,7 +378,9 @@ function finishTest(){
   state.answers = [];
   save();
   submitResponse(res);
-  logEvent("complete_test", { result_code: code });
+  logEvent("complete_test", { result_code: code, test_run_id: completedRunId, duration_ms:elapsedMs });
+  state.testRunId = "";
+  state.testStartedAt = 0;
   state.page = "home";
   save();
   return resultPage(res);
@@ -362,6 +402,9 @@ function resultPage(res){
     <section class="card">
       <h2>你的画像解释</h2>
       <p>${p.summary}</p>
+      <div class="info"><b>这个结果与你的实际运动偏好符合吗？</b><div class="actions"><button onclick="rateResult('${res.id}','yes')">比较符合</button><button onclick="rateResult('${res.id}','no')">不太符合</button></div><p id="feedbackStatus" class="small-note">${state.resultFeedback?.[res.id] ? "已记录本机反馈，谢谢！" : "反馈默认仅存在本机；同意统计后才会上传。"}</p></div>
+      <p class="small-note">这是基于自选答案的趣味偏好归类，不是经过心理测量验证的人格测评，也不代表医学或专业运动建议。</p>
+      ${unclearPairs(res.score).length ? `<p class="small-note">提示：${unclearPairs(res.score).length}组倾向得分接近，结果可能随少量答案变化，建议结合个人实际体验。</p>` : ""}
       ${bars(res.score)}
       <div class="info"><b>高光行为</b><p>${p.strength}</p></div>
       <div class="info"><b>危险误区</b><p>${p.trap}</p></div>
@@ -381,7 +424,7 @@ function currentTasks(){
   return res ? persona(res.code).daily : ["走路 15 分钟","拉伸 8 分钟","睡前写一句身体反馈"];
 }
 function taskInfo(){
-  const done = state.tasks[today()] || {};
+  const done = state.tasks[taskKey()] || {};
   const tasks = currentTasks();
   return {total:tasks.length, done:tasks.filter((_,i)=>done[i]).length};
 }
@@ -408,7 +451,7 @@ function planPage(){
   `;
 }
 function taskList(interactive){
-  const done = state.tasks[today()] || {};
+  const done = state.tasks[taskKey()] || {};
   return currentTasks().map((t,i)=>`
     <div class="task">
       <button class="check ${done[i]?'done':''}" ${interactive?`data-task="${i}"`:"disabled"}>${done[i]?'✓':''}</button>
@@ -419,7 +462,7 @@ function taskList(interactive){
 function bindPlan(){
   document.querySelectorAll("[data-task]").forEach(btn=>{
     btn.onclick = () => {
-      const key = today();
+      const key = taskKey();
       state.tasks[key] = state.tasks[key] || {};
       state.tasks[key][btn.dataset.task] = !state.tasks[key][btn.dataset.task];
       save();
@@ -428,7 +471,7 @@ function bindPlan(){
     };
   });
 }
-window.resetToday = function(){ state.tasks[today()] = {}; save(); render(); };
+window.resetToday = function(){ state.tasks[taskKey()] = {}; save(); logEvent("reset_today"); render(); };
 window.saveNote = function(){
   const input = document.getElementById("noteInput");
   const text = input.value.trim();
@@ -528,8 +571,19 @@ function historyPage(){
     </section>
   `;
 }
+window.rateResult = function(id, rating){
+  if (!["yes","no"].includes(rating)) return;
+  const res = state.history.find(x => x.id === id);
+  if (!res) return;
+  state.resultFeedback = state.resultFeedback || {};
+  state.resultFeedback[id] = rating;
+  save();
+  logEvent("result_feedback", {result_code:res.code, rating});
+  const status = document.getElementById("feedbackStatus");
+  if(status) status.textContent = "已记录本机反馈，谢谢！";
+};
 window.clearHistory = function(){
-  if(confirm("确定清空本机历史？不会删除已上传到后台的数据。")) { state.history=[]; save(); render(); }
+  if(confirm("确定清空本机历史？不会删除已上传到后台的数据。")) { state.history=[]; state.resultFeedback={}; save(); render(); }
 };
 window.exportData = function(){
   const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
@@ -542,7 +596,7 @@ window.copyResult = function(id){
   const res = state.history.find(x=>x.id===id) || lastResult(); if(!res) return;
   const p = persona(res.code);
   navigator.clipboard.writeText(`我的健身人格是 ${res.code}｜${p.name}：${p.quote} #健身人格抽象图鉴`)
-    .then(()=>alert("已复制"))
+    .then(()=>{logEvent("copy_result", {result_code:res.code}); alert("已复制");})
     .catch(()=>alert("复制失败，可以截图保存"));
 };
 window.downloadPoster = function(id){
@@ -577,6 +631,7 @@ window.downloadPoster = function(id){
   a.download = `FitPersona-${res.code}-${p.name}.png`;
   a.href = canvas.toDataURL("image/png");
   a.click();
+  logEvent("download_poster", {result_code:res.code});
 };
 
 function drawRadar(canvas, score, color){
