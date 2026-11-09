@@ -267,7 +267,7 @@ function homePage(){
   const task = taskInfo();
   return `
     <section class="hero">
-      <div class="section-head"><span class="pill">mobile-first · v4 数据版</span>${analyticsBadge()}</div>
+      <div class="section-head"><span class="pill">mobile-first · v4.3 体验版</span>${analyticsBadge()}</div>
       <h1>测测你是哪种健身物种</h1>
       <p>20题探索运动偏好，领取适合你尝试的轻量任务；测试结果仅供自我探索，不是经验证的人格或运动诊断。</p>
       <div class="consent">
