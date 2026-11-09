@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import json
 from datetime import date, datetime, timedelta
+from html import escape
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
@@ -632,7 +633,7 @@ def render_answers(ans_df: pd.DataFrame) -> None:
         qids = sorted(ans_df["题号"].dropna().unique())
         qid = st.selectbox("选择题目", qids, format_func=lambda x: f"Q{int(x)}")
     sub = ans_df[ans_df["题号"] == qid].copy()
-    q_text = sub["题目"].iloc[0] if len(sub) else ""
+    q_text = escape(str(sub["题目"].iloc[0])) if len(sub) else ""
 
     with c2:
         st.markdown(
@@ -766,6 +767,50 @@ def render_raw(df: pd.DataFrame, ans_df: pd.DataFrame) -> None:
 
 
 # =========================
+# Privacy-aware, opt-in funnel
+# =========================
+
+def render_behavior_funnel(events_df: pd.DataFrame) -> None:
+    st.markdown('<div class="section-title"><div><h2>测试漏斗与交互行为</h2><p>仅统计用户主动同意上传且包含 test_run_id 的新版事件。</p></div></div>', unsafe_allow_html=True)
+    if events_df.empty or "event_name" not in events_df:
+        st.info("还没有可用事件数据；测试完成记录不等于完整的访问/转化漏斗。")
+        return
+
+    ev = events_df.copy()
+    ev["details"] = ev["payload"].apply(as_dict) if "payload" in ev else [{} for _ in range(len(ev))]
+    ev["run_id"] = ev["details"].apply(lambda p: str(p.get("test_run_id") or "").strip())
+    ev["answered_count"] = ev["details"].apply(lambda p: int(p.get("answered_count") or 0) if str(p.get("answered_count") or 0).isdigit() else 0)
+    valid = ev[ev["run_id"] != ""].copy()
+    starts = set(valid.loc[valid["event_name"] == "start_test", "run_id"])
+    completed = set(valid.loc[valid["event_name"] == "complete_test", "run_id"])
+    stages = [("开始测试", starts)]
+    for step in (5, 10, 15):
+        progressed = set(valid.loc[
+            ((valid["event_name"] == "question_progress") & (valid["answered_count"] >= step))
+            | (valid["event_name"] == "complete_test"), "run_id"
+        ])
+        stages.append((f"完成至少{step}题", progressed & starts))
+    stages.append(("完成20题", completed & starts))
+
+    counts = pd.DataFrame([{"阶段": name, "次数": len(run_ids)} for name, run_ids in stages])
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("开始次数", len(starts))
+    with c2:
+        st.metric("完成次数", len(completed & starts))
+    with c3:
+        st.metric("测试完成率", f"{len(completed & starts) / len(starts):.1%}" if starts else "暂无")
+    st.bar_chart(counts.set_index("阶段"), y="次数")
+    st.caption("口径：同意统计的测试轮次，非全站访问数；若用户退出时断网或旧版未生成run_id，会存在漏报。数据受当前最多20,000行读取上限影响。")
+
+    names = ev["event_name"].value_counts().reset_index()
+    names.columns = ["交互事件", "记录次数"]
+    st.markdown("**事件构成（原始事件条数）**")
+    st.dataframe(names, use_container_width=True, hide_index=True)
+    st.caption("任务勾选包含撤销事件，不等于实际运动完成；分享操作只代表按钮点击，不等于成功传播。")
+
+
+# =========================
 # Main
 # =========================
 
@@ -799,6 +844,11 @@ if raw_df.empty:
     st.stop()
 
 df_all = prepare_df(raw_df)
+try:
+    events_df = fetch_table("fitpersona_events")
+except Exception as exc:
+    st.warning(f"事件统计暂不可用：{exc}")
+    events_df = pd.DataFrame()
 df = filter_df(df_all)
 
 if df.empty:
@@ -810,7 +860,7 @@ ans_df = flatten_answers(df)
 st.markdown('<div class="section-title"><div><h2>数据总览</h2><p>先看整体表现，再进入具体题目和来源分析。</p></div></div>', unsafe_allow_html=True)
 kpi_cards(df, df_all)
 
-tab1, tab2, tab3, tab4 = st.tabs(["总览", "题目分析", "来源与设备", "原始数据"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["总览", "题目分析", "来源与设备", "交互漏斗", "原始数据"])
 
 with tab1:
     render_overview(df)
@@ -822,4 +872,7 @@ with tab3:
     render_sources(df)
 
 with tab4:
+    render_behavior_funnel(events_df)
+
+with tab5:
     render_raw(df, ans_df)
