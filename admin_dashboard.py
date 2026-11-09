@@ -793,13 +793,20 @@ def render_behavior_funnel(events_df: pd.DataFrame) -> None:
     stages.append(("完成20题", completed & starts))
 
     counts = pd.DataFrame([{"阶段": name, "次数": len(run_ids)} for name, run_ids in stages])
-    c1, c2, c3 = st.columns(3)
+    complete_events = valid[valid["event_name"] == "complete_test"]
+    duration_s = pd.to_numeric(
+        complete_events["details"].apply(lambda p: p.get("duration_ms")), errors="coerce"
+    ).dropna() / 1000
+    duration_s = duration_s[(duration_s >= 0) & (duration_s <= 7200)]
+    c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.metric("开始次数", len(starts))
     with c2:
         st.metric("完成次数", len(completed & starts))
     with c3:
         st.metric("测试完成率", f"{len(completed & starts) / len(starts):.1%}" if starts else "暂无")
+    with c4:
+        st.metric("中位完成时长", f"{duration_s.median():.0f}秒" if not duration_s.empty else "暂无")
     st.bar_chart(counts.set_index("阶段"), y="次数")
     st.caption("口径：同意统计的测试轮次，非全站访问数；若用户退出时断网或旧版未生成run_id，会存在漏报。数据受当前最多20,000行读取上限影响。")
 
@@ -807,6 +814,13 @@ def render_behavior_funnel(events_df: pd.DataFrame) -> None:
     names.columns = ["交互事件", "记录次数"]
     st.markdown("**事件构成（原始事件条数）**")
     st.dataframe(names, use_container_width=True, hide_index=True)
+    feedback = ev[ev["event_name"] == "result_feedback"]["details"].apply(
+        lambda p: p.get("rating") if isinstance(p, dict) else None
+    ).value_counts()
+    total_feedback = int(feedback.sum())
+    if total_feedback:
+        st.metric("反馈称比较符合", f"{int(feedback.get('yes', 0))}/{total_feedback}")
+        st.caption("仅表示自愿反馈的主观匹配度，不代表心理测量效度或用户满意度。")
     st.caption("任务勾选包含撤销事件，不等于实际运动完成；分享操作只代表按钮点击，不等于成功传播。")
 
 
