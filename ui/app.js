@@ -101,8 +101,14 @@ function answerPayload() {
   });
 }
 function pct(s,a,b) {
-  const total = s[a] + s[b] || 1;
-  return Math.round(s[a] / total * 100);
+  const total = s[a] + s[b];
+  return total > 0 ? Math.round(s[a] / total * 100) : 50;
+}
+function unclearPairs(score) {
+  return DATA.pairs.filter(([a,b]) => {
+    const total = score[a] + score[b];
+    return !total || Math.abs(score[a] - score[b]) / total < 0.12;
+  });
 }
 function rgba(hex, alpha) {
   const n = parseInt(hex.replace("#",""), 16);
@@ -236,7 +242,7 @@ window.toggleConsent = function(){
   state.consentTouched = true;
   save();
   render();
-  logEvent("toggle_consent", {consent: state.consent});
+  // Consent choices stay on this device; do not upload consent-toggle events.
 };
 window.resetAll = function(){
   if(confirm("确定清空本地测试、任务和记录吗？不会删除已上传到后台的数据。")) {
@@ -248,9 +254,9 @@ window.resetAll = function(){
 };
 
 function analyticsBadge(){
-  if(!CONFIG.enabled) return `<span class="badge warn">后台未配置</span>`;
-  if(state.consent) return `<span class="badge ok">匿名上传已开启</span>`;
-  return `<span class="badge">匿名上传未开启</span>`;
+  if(!CONFIG.enabled) return `<span class="badge warn">云端不可用 · 仅本机</span>`;
+  if(state.consent) return `<span class="badge ok">已同意去标识化统计</span>`;
+  return `<span class="badge">默认仅本机保存</span>`;
 }
 function homePage(){
   const res = lastResult();
@@ -391,6 +397,8 @@ function resultPage(res){
     <section class="card">
       <h2>你的画像解释</h2>
       <p>${p.summary}</p>
+      <p class="small-note">这是基于自选答案的趣味偏好归类，不是经过心理测量验证的人格测评，也不代表医学或专业运动建议。</p>
+      ${unclearPairs(res.score).length ? `<p class="small-note">提示：${unclearPairs(res.score).length}组倾向得分接近，结果可能随少量答案变化，建议结合个人实际体验。</p>` : ""}
       ${bars(res.score)}
       <div class="info"><b>高光行为</b><p>${p.strength}</p></div>
       <div class="info"><b>危险误区</b><p>${p.trap}</p></div>
@@ -457,7 +465,7 @@ function bindPlan(){
     };
   });
 }
-window.resetToday = function(){ state.tasks[taskKey()] = {}; save(); render(); };
+window.resetToday = function(){ state.tasks[taskKey()] = {}; save(); logEvent("reset_today"); render(); };
 window.saveNote = function(){
   const input = document.getElementById("noteInput");
   const text = input.value.trim();
@@ -571,7 +579,7 @@ window.copyResult = function(id){
   const res = state.history.find(x=>x.id===id) || lastResult(); if(!res) return;
   const p = persona(res.code);
   navigator.clipboard.writeText(`我的健身人格是 ${res.code}｜${p.name}：${p.quote} #健身人格抽象图鉴`)
-    .then(()=>alert("已复制"))
+    .then(()=>{logEvent("copy_result", {result_code:res.code}); alert("已复制");})
     .catch(()=>alert("复制失败，可以截图保存"));
 };
 window.downloadPoster = function(id){
@@ -606,6 +614,7 @@ window.downloadPoster = function(id){
   a.download = `FitPersona-${res.code}-${p.name}.png`;
   a.href = canvas.toDataURL("image/png");
   a.click();
+  logEvent("download_poster", {result_code:res.code});
 };
 
 function drawRadar(canvas, score, color){
