@@ -73,7 +73,7 @@ with check (
   event_name in (
     'start_test', 'question_progress', 'leave_test', 'restart_test',
     'complete_test', 'task_toggle', 'save_note', 'match',
-    'copy_result', 'download_poster', 'reset_today'
+    'copy_result', 'download_poster', 'reset_today', 'result_feedback'
   )
 );
 
