@@ -15,7 +15,7 @@ create table if not exists public.fitpersona_responses (
   score jsonb,
   dimensions jsonb,
   answers jsonb,
-  consent boolean default true,
+  consent boolean not null default false,
 
   app_version text,
   user_agent text,
@@ -52,7 +52,7 @@ create policy "anon can insert fitpersona responses"
 on public.fitpersona_responses
 for insert
 to anon
-with check (true);
+with check (consent is true);
 
 drop policy if exists "anon can insert fitpersona events" on public.fitpersona_events;
 create policy "anon can insert fitpersona events"
@@ -65,3 +65,27 @@ grant insert on public.fitpersona_responses to anon;
 grant insert on public.fitpersona_events to anon;
 
 -- 你自己后台读取时请使用 service_role_key，不要在前端暴露 service_role_key。
+
+-- v4.3: new deployments default to no collection, and backend reads stay service-role only.
+-- Anonymous writes are restricted to explicit-consent responses and known events.
+-- This is NOT an anti-spam boundary; add server-side throttling for public campaigns.
+drop policy if exists "anon can insert fitpersona events" on public.fitpersona_events;
+create policy "anon can insert fitpersona events"
+on public.fitpersona_events
+for insert to anon
+with check (
+  event_name in (
+    'start_test', 'question_progress', 'leave_test', 'restart_test',
+    'complete_test', 'task_toggle', 'save_note', 'match',
+    'copy_result', 'download_poster', 'reset_today'
+  )
+);
+
+create index if not exists fitpersona_responses_created_at_idx
+on public.fitpersona_responses (created_at desc);
+create index if not exists fitpersona_responses_participant_idx
+on public.fitpersona_responses (participant_id, created_at desc);
+create index if not exists fitpersona_events_name_time_idx
+on public.fitpersona_events (event_name, created_at desc);
+create index if not exists fitpersona_events_participant_idx
+on public.fitpersona_events (participant_id, created_at desc);
