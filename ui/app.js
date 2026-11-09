@@ -12,6 +12,8 @@ const defaultState = {
   consent: false,
   consentTouched: false,
   testRunId: "",
+  testStartedAt: 0,
+  resultFeedback: {},
   participantId: "",
   lastSubmitStatus: ""
 };
@@ -231,6 +233,7 @@ function startTest(){
   state.qIndex = 0;
   state.answers = [];
   state.testRunId = crypto.randomUUID ? crypto.randomUUID() : "run_" + Date.now();
+  state.testStartedAt = Date.now();
   save();
   logEvent("start_test", {test_run_id:state.testRunId});
   render();
@@ -358,6 +361,7 @@ window.prevQ = function(){
 };
 function finishTest(){
   const completedRunId = state.testRunId;
+  const elapsedMs = state.testStartedAt ? Math.max(0, Date.now() - state.testStartedAt) : null;
   const score = scoreAnswers();
   const code = codeFromScore(score);
   const res = {
@@ -374,8 +378,9 @@ function finishTest(){
   state.answers = [];
   save();
   submitResponse(res);
-  logEvent("complete_test", { result_code: code, test_run_id: completedRunId });
+  logEvent("complete_test", { result_code: code, test_run_id: completedRunId, duration_ms:elapsedMs });
   state.testRunId = "";
+  state.testStartedAt = 0;
   state.page = "home";
   save();
   return resultPage(res);
@@ -397,6 +402,7 @@ function resultPage(res){
     <section class="card">
       <h2>你的画像解释</h2>
       <p>${p.summary}</p>
+      <div class="info"><b>这个结果与你的实际运动偏好符合吗？</b><div class="actions"><button onclick="rateResult('${res.id}','yes')">比较符合</button><button onclick="rateResult('${res.id}','no')">不太符合</button></div><p id="feedbackStatus" class="small-note">${state.resultFeedback?.[res.id] ? "已记录本机反馈，谢谢！" : "反馈默认仅存在本机；同意统计后才会上传。"}</p></div>
       <p class="small-note">这是基于自选答案的趣味偏好归类，不是经过心理测量验证的人格测评，也不代表医学或专业运动建议。</p>
       ${unclearPairs(res.score).length ? `<p class="small-note">提示：${unclearPairs(res.score).length}组倾向得分接近，结果可能随少量答案变化，建议结合个人实际体验。</p>` : ""}
       ${bars(res.score)}
@@ -565,8 +571,19 @@ function historyPage(){
     </section>
   `;
 }
+window.rateResult = function(id, rating){
+  if (!["yes","no"].includes(rating)) return;
+  const res = state.history.find(x => x.id === id);
+  if (!res) return;
+  state.resultFeedback = state.resultFeedback || {};
+  state.resultFeedback[id] = rating;
+  save();
+  logEvent("result_feedback", {result_code:res.code, rating});
+  const status = document.getElementById("feedbackStatus");
+  if(status) status.textContent = "已记录本机反馈，谢谢！";
+};
 window.clearHistory = function(){
-  if(confirm("确定清空本机历史？不会删除已上传到后台的数据。")) { state.history=[]; save(); render(); }
+  if(confirm("确定清空本机历史？不会删除已上传到后台的数据。")) { state.history=[]; state.resultFeedback={}; save(); render(); }
 };
 window.exportData = function(){
   const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
