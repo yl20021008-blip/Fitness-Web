@@ -54,17 +54,13 @@ for insert
 to anon
 with check (consent is true);
 
-drop policy if exists "anon can insert fitpersona events" on public.fitpersona_events;
-create policy "anon can insert fitpersona events"
-on public.fitpersona_events
-for insert
-to anon
-with check (true);
-
 grant insert on public.fitpersona_responses to anon;
 grant insert on public.fitpersona_events to anon;
 
 -- 你自己后台读取时请使用 service_role_key，不要在前端暴露 service_role_key。
+
+-- v4.3: existing installations retain data but default future submissions to no collection.
+alter table public.fitpersona_responses alter column consent set default false;
 
 -- v4.3: new deployments default to no collection, and backend reads stay service-role only.
 -- Anonymous writes are restricted to explicit-consent responses and known events.
